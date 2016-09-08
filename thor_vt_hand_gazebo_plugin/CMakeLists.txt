@@ -114,7 +114,6 @@ link_directories(
 ## Declare a cpp library
 add_library(THOR_VT_HandPlugin src/THOR_VT_HandPlugin.cpp)
 target_link_libraries(THOR_VT_HandPlugin ${catkin_LIBRARIES})
-add_dependencies(THOR_VT_HandPlugin osrf_msgs_gencpp)
 add_dependencies(THOR_VT_HandPlugin vigir_grasp_msgs_generate_messages_cpp)
 
 ## Declare a cpp executable
