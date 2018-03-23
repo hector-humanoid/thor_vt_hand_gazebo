@@ -1,0 +1,16 @@
+<?xml version="1.0"?>
+
+<launch>
+  <arg name="robot_name" default="thormang3" />
+
+  <!-- Load joint controller configurations from YAML file to parameter server -->
+  <rosparam file="$(find thor_vt_hand_gazebo)/config/left_hand_position_controllers.yaml" command="load" />
+
+  <!-- load the controllers -->
+  <node name="left_hand_pos_controller_spawner" pkg="controller_manager" type="spawner" output="screen"
+    args="--stopped
+          l_f0_j0_position
+          l_f1_j0_position" />
+
+  <node name="start_left_hand_position_controller" pkg="thor_mang_scripts" type="start_controller.sh" args="/gazebo/$(arg robot_name)/joints 2 l_f0_j0_position l_f1_j0_position" />
+</launch>

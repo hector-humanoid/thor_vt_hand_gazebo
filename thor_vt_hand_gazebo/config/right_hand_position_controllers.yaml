@@ -1,0 +1,9 @@
+r_f0_j0_position:
+  type: effort_controllers/JointPositionController
+  joint: r_f0_j0
+  pid: {p: 50.0, i: 0.0, d: 0.001}
+
+r_f1_j0_position:
+  type: effort_controllers/JointPositionController
+  joint: r_f1_j0
+  pid: {p: 50.0, i: 0.0, d: 0.001}
