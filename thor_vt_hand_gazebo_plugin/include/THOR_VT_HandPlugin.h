@@ -16,7 +16,6 @@
 
 #include <std_msgs/String.h>
 
-#include <gazebo/math/Vector3.hh>
 #include <gazebo/physics/physics.hh>
 #include <gazebo/physics/PhysicsTypes.hh>
 #include <gazebo/transport/TransportTypes.hh>

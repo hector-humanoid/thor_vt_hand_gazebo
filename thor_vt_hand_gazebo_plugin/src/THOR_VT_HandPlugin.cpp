@@ -27,7 +27,6 @@ THOR_VT_HandPlugin::THOR_VT_HandPlugin()
 // Destructor
 THOR_VT_HandPlugin::~THOR_VT_HandPlugin()
 {
-  event::Events::DisconnectWorldUpdateBegin(this->updateConnection);
   delete this->pmq;
   this->rosNode->shutdown();
   this->rosQueue.clear();
@@ -44,7 +43,7 @@ int THOR_VT_HandPlugin::GetObjectDetection(const gazebo::physics::JointPtr& _joi
 
   // Check if the finger reached its target positions. We look at the error in
   // the position PID to decide if reached the target.
-  bool reachPosition = (fabs(_command - _joint->GetAngle(0).Radian()) < 0.02);
+  bool reachPosition = (fabs(_command - _joint->Position(0)) < 0.02);
 
   if (isMoving)
   {
@@ -86,7 +85,7 @@ void THOR_VT_HandPlugin::Load(physics::ModelPtr _parent, sdf::ElementPtr _sdf)
   // Get the world name.
   this->world = this->model->GetWorld();
   this->sdf = _sdf;
-  this->lastControllerUpdateTime = this->world->GetSimTime();
+  this->lastControllerUpdateTime = this->world->SimTime();
 
   // determine which hand (left/right)
   if (!this->sdf->HasElement("prefix") || !this->sdf->GetElement("prefix")->GetValue()->Get(this->prefix) || ((this->prefix != "l") && (this->prefix != "r")))
@@ -233,7 +232,7 @@ void THOR_VT_HandPlugin::DeferredLoad()
   this->subJointCommands = this->rosNode->subscribe(jointCommandsSo);
 
   // initialize status pub time
-  this->lastStatusTime = this->world->GetSimTime().Double();
+  this->lastStatusTime = this->world->SimTime().Double();
   this->updateRate = 1.0;
 
   // ros callback queue for processing subscription
@@ -246,7 +245,7 @@ void THOR_VT_HandPlugin::DeferredLoad()
 
 void THOR_VT_HandPlugin::UpdateStates()
 {
-  common::Time curTime = this->world->GetSimTime();
+  common::Time curTime = this->world->SimTime();
 
   if (curTime > this->lastControllerUpdateTime)
   {
@@ -254,7 +253,7 @@ void THOR_VT_HandPlugin::UpdateStates()
     this->jointStates.header.stamp = ros::Time(curTime.sec, curTime.nsec);
     for (unsigned int i = 0; i < this->joints.size(); ++i)
     {
-      this->jointStates.position[i] = this->joints[i]->GetAngle(0).Radian();
+      this->jointStates.position[i] = this->joints[i]->Position(0);
       this->jointStates.velocity[i] = this->joints[i]->GetVelocity(0);
       // better to use GetForceTorque dot joint axis
       this->jointStates.effort[i] = this->joints[i]->GetForce(0u);
@@ -285,7 +284,7 @@ void THOR_VT_HandPlugin::UpdateStates()
           {
             this->errorTerms[i].d_q_p_dt = 0;
           }
-          else if (!math::equal(dt, 0.0))
+          else if (!ignition::math::equal(dt, 0.0))
           {
             this->errorTerms[i].d_q_p_dt = (q_p - this->errorTerms[i].q_p) / dt;
           }
@@ -315,7 +314,7 @@ void THOR_VT_HandPlugin::UpdateStates()
             q_p = -position * 10;
           }
 
-          if (!math::equal(dt, 0.0))
+          if (!ignition::math::equal(dt, 0.0))
           {
             this->errorTerms[i].d_q_p_dt = (q_p - this->errorTerms[i].q_p) / dt;
           }
@@ -325,7 +324,7 @@ void THOR_VT_HandPlugin::UpdateStates()
 
         this->errorTerms[i].qd_p = this->jointCommands.velocity[i] - velocity;
 
-        this->errorTerms[i].q_i = math::clamp(this->errorTerms[i].q_i + dt * this->errorTerms[i].q_p, static_cast<double>(this->jointCommands.i_effort_min[i]), static_cast<double>(this->jointCommands.i_effort_max[i]));
+        this->errorTerms[i].q_i = ignition::math::clamp(this->errorTerms[i].q_i + dt * this->errorTerms[i].q_p, static_cast<double>(this->jointCommands.i_effort_min[i]), static_cast<double>(this->jointCommands.i_effort_max[i]));
 
         // use gain params to compute force cmd
         force = this->jointCommands.kp_position[i] * this->errorTerms[i].q_p + this->jointCommands.kp_velocity[i] * this->errorTerms[i].qd_p + this->jointCommands.ki_position[i] * this->errorTerms[i].q_i +
