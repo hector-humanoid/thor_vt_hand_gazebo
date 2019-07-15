@@ -32,105 +32,116 @@
 
 namespace gazebo
 {
-	namespace physics {
-		class Collision;
-	}
-
-	class THOR_VT_HandPlugin : public ModelPlugin
-	{
-		/// \brief Constructor
-	public: THOR_VT_HandPlugin();
-
-			/// \brief Destructor
-	public: virtual ~THOR_VT_HandPlugin();
-
-			/// \brief Load the controller
-	public: void Load(physics::ModelPtr _parent, sdf::ElementPtr _sdf);
-
-			/// \brief Update the controller
-	private: void UpdateStates();
-        private: int GetObjectDetection(
-  const gazebo::physics::JointPtr &_joint, int _index, double _command,
-  double _prevCommand);
-
-			 /// \brief ROS callback queue thread
-	private: void RosQueueThread();
-
-			 /// \brief: thread out Load function with
-			 /// with anything that might be blocking.
-	private: void DeferredLoad();
-	private: void CopyVectorIfValid(const std::vector<double> &from,
-		std::vector<double> &to);
-
-			 /// \brief Callback for contact messages
-			 /// \param[in] _msg Gazebo contact message
-	private: void OnContacts(ConstContactsPtr &_msg);
-
-	typedef std::list<boost::shared_ptr<msgs::Contacts const> > ContactMsgs_L;
-
-	private: physics::WorldPtr world;
-	private: physics::ModelPtr model;
-
-			 /// Which hand (left(l)/right(r))
-	private: std::string side;
-	private: std::string prefix;
-
-  			/// \brief Velocity tolerance. Below this value we assume that the joint is
-  			/// stopped (rad/s).
-  	private: static constexpr double VelTolerance = 0.002;
-
-  			/// \brief Position tolerance. If the difference between target position and
-  			/// current position is within this value we'll conclude that the joint
- 			 /// reached its target (rad).
- 	private: static constexpr double PoseTolerance = 0.002;
-
-
-			 /// Pointer to the update event connections
-	private: event::ConnectionPtr updateConnection;
-
-			 /// Throttle update rate
-	private: double lastStatusTime;
-	private: double updateRate;
-
-			 // deferred loading in case ros is blocking
-	private: sdf::ElementPtr sdf;
-	private: boost::thread deferredLoadThread;
-
-			 // ROS stuff
-	private: ros::NodeHandle* rosNode;
-	private: ros::CallbackQueue rosQueue;
-	private: boost::thread callbackQueeuThread;
-	private: ros::Publisher pubJointStates;
-	private: PubQueue<sensor_msgs::JointState>::Ptr pubJointStatesQueue;
-
-	private: ros::Subscriber subJointCommands;
-	private: void SetJointCommands(
-        const vigir_grasp_msgs::JointCommands::ConstPtr &_msg);
-
-	private: std::vector<std::string> jointNames;
-	private: physics::Joint_V joints;
-	private: class ErrorTerms
-	{
-		double q_p;
-		double d_q_p_dt;
-		double q_i;
-		double qd_p;
-		friend class THOR_VT_HandPlugin;
-	};
-	private: std::vector<ErrorTerms> errorTerms;
-
-        private: vigir_grasp_msgs::JointCommands jointCommands;
-
-	private: sensor_msgs::JointState jointStates;
-
-			 // Controls stuff
-	private: common::Time lastControllerUpdateTime;
-
-			 // ros publish multi queue, prevents publish() blocking
-	private: PubMultiQueue* pmq;
-
-			 /// \breif prevent overwriting commadns
-	private: boost::mutex mutex;
-	};
+namespace physics
+{
+class Collision;
 }
+
+class THOR_VT_HandPlugin : public ModelPlugin
+{
+public:
+  /// \brief Constructor
+  THOR_VT_HandPlugin();
+
+  /// \brief Destructor
+  virtual ~THOR_VT_HandPlugin();
+
+  /// \brief Load the controller
+  void Load(physics::ModelPtr _parent, sdf::ElementPtr _sdf) override;
+
+  /// \brief Update the controller
+private:
+  void UpdateStates();
+
+  int GetObjectDetection(const gazebo::physics::JointPtr& _joint, int _index, double _command, double _prevCommand);
+
+  /// \brief ROS callback queue thread
+  void RosQueueThread();
+
+  /// \brief: thread out Load function with
+  /// with anything that might be blocking.
+  void DeferredLoad();
+
+  void CopyVectorIfValid(const std::vector<double>& from, std::vector<double>& to);
+
+  /// \brief Callback for contact messages
+  /// \param[in] _msg Gazebo contact message
+  void OnContacts(ConstContactsPtr& _msg);
+
+  typedef std::list<boost::shared_ptr<msgs::Contacts const> > ContactMsgs_L;
+
+  physics::WorldPtr world;
+  physics::ModelPtr model;
+
+  /// Which hand (left(l)/right(r))
+  std::string side;
+
+  std::string prefix;
+
+  /// \brief Velocity tolerance. Below this value we assume that the joint is
+  /// stopped (rad/s).
+  static constexpr double VelTolerance = 0.002;
+
+  /// \brief Position tolerance. If the difference between target position and
+  /// current position is within this value we'll conclude that the joint
+  /// reached its target (rad).
+  static constexpr double PoseTolerance = 0.002;
+
+  /// Pointer to the update event connections
+  event::ConnectionPtr updateConnection;
+
+  /// Throttle update rate
+  double lastStatusTime;
+
+  double updateRate;
+
+  // deferred loading in case ros is blocking
+  sdf::ElementPtr sdf;
+
+  boost::thread deferredLoadThread;
+
+  // ROS stuff
+  ros::NodeHandle* rosNode;
+
+  ros::CallbackQueue rosQueue;
+
+  boost::thread callbackQueeuThread;
+
+  ros::Publisher pubJointStates;
+
+  PubQueue<sensor_msgs::JointState>::Ptr pubJointStatesQueue;
+
+  ros::Subscriber subJointCommands;
+
+  void SetJointCommands(const vigir_grasp_msgs::JointCommands::ConstPtr& _msg);
+
+  std::vector<std::string> jointNames;
+
+  physics::Joint_V joints;
+
+  class ErrorTerms
+  {
+    double q_p;
+    double d_q_p_dt;
+    double q_i;
+    double qd_p;
+    friend class THOR_VT_HandPlugin;
+  };
+
+  std::vector<ErrorTerms> errorTerms;
+
+  vigir_grasp_msgs::JointCommands jointCommands;
+
+  sensor_msgs::JointState jointStates;
+
+  // Controls stuff
+  common::Time lastControllerUpdateTime;
+
+  // ros publish multi queue, prevents publish() blocking
+  PubMultiQueue* pmq;
+
+  /// \brief prevent overwriting commadns
+  boost::mutex mutex;
+};
+}  // namespace gazebo
 #endif
